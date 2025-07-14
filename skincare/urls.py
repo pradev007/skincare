@@ -1,3 +1,5 @@
+# skincare/urls.py
+
 """
 URL configuration for skincare project.
 
@@ -16,10 +18,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from account import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
-    path('auth/', include('account.urls'))
+    path('auth/', include('account.urls', namespace='accounts'))
 ]

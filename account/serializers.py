@@ -1,12 +1,36 @@
+# account/serializers.py
+import re
 from rest_framework import serializers
 from .models import CustomUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only= True)
+    password = serializers.CharField(write_only= True, min_length = 8)
+    phone = serializers.CharField(max_length = 10)
     class Meta:
         model = CustomUser
-        fields = '__all__'
+        fields = ['fullname', 'phone', 'password','role']
+        extra_kwargs = {
+            'role': {'default': 'user'},
+            'is_active': {'read_only':True},
+            'is_staff': {'read_only':True},
+            'is_superuser': {'read_only':True}
+        }
+
+    def validate_phone (self,value):
+        if not re.match(r'^\d{10}$', value):
+            raise serializers.ValidationError("phone number must be exactly 10 digits")
+        return value
+    
+    def validate_password(self,value):
+        has_uppercase = re.search(r'[A-Z]',value)
+        has_digit = re.search(r'[0-9]',value)
+        has_special = re.search(r'[!@#$%^&*]',value)
+
+        if not all([has_uppercase,has_digit,has_special]):
+            raise serializers.ValidationError('Password must contain atleast one uppercase,digit and special character')
+        return value
+    
 
     def create(self,validated_data):
         user = CustomUser.objects.create_user(
@@ -18,8 +42,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICE)
     def validate(self, attrs):
         data = super().validate(attrs)
+        if self.user.role != attrs['role']:
+            raise serializers.ValidationError({'role':'invalid role for this user'})
+        if not self.user.is_active:
+            raise serializers.ValidationError({'non_field_errors':'Account is inactive'})
         data['fullname'] = self.user.fullname
+        data['phone'] = self.user.phone
         data['role'] = self.user.role
         return data
