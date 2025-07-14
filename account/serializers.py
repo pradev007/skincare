@@ -22,6 +22,16 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("phone number must be exactly 10 digits")
         return value
     
+
+    
+    def validate_role(self, value):
+        """
+        Prevent superadmin role creation via API.
+        """
+        if value == 'superadmin':
+            raise serializers.ValidationError("Cannot create superadmin via API")
+        return value
+    
     def validate_password(self,value):
         has_uppercase = re.search(r'[A-Z]',value)
         has_digit = re.search(r'[0-9]',value)
@@ -42,13 +52,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICE)
+    # role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICE)
     def validate(self, attrs):
         data = super().validate(attrs)
-        if self.user.role != attrs['role']:
-            raise serializers.ValidationError({'role':'invalid role for this user'})
+        # remove the below line to remove role-base login
+        # if self.user.role != attrs['role']:
+        #     raise serializers.ValidationError({'role':'invalid role for this user'})
         if not self.user.is_active:
             raise serializers.ValidationError({'non_field_errors':'Account is inactive'})
+        
+        # check if request came from API clients(eg,postman) and restrict them
+        # request = self.context.get('request')
+        # user_agent = request.META.get('HTTP_USER_AGENT', '')
+        # if self.user.role == 'superadmin' and 'Postman' in user_agent:
+        #     raise serializers.ValidationError({"non_field_errors": "Superadmin login is restricted to browser-based interfaces"})
+
         data['fullname'] = self.user.fullname
         data['phone'] = self.user.phone
         data['role'] = self.user.role
