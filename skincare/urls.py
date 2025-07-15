@@ -18,10 +18,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls.static import static
+
+from skincare import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('account.urls')),
     path('api/',include('home.urls')),
-    path('api/',include('rating.urls'))
+    path('api/',include('rating.urls')),
+    path('api/',include('services.urls')),
+    path('api/',include('programs.urls'))
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
