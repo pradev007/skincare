@@ -28,7 +28,8 @@ urlpatterns = [
     path('api/',include('home.urls')),
     path('api/',include('rating.urls')),
     path('api/',include('services.urls')),
-    path('api/',include('programs.urls'))
+    path('api/',include('programs.urls')),
+    path('api/',include('experts.urls'))
 ]
 
 
